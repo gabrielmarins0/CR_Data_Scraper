@@ -1,8 +1,8 @@
 let basicAuthToken = "Basic Y3Jfd2ViOg==";
-let animesRequestNumber = 2000;
+let animesRequestNumber = 1600;
 let startAnimeIndex = 0; //gintama = 441
 let preferLocale = "pt-BR";
-let delayRequest = 300;
+let delayRequest = 30;
 
 async function getToken() {
   const tokenResponse = await fetch("https://beta-api.crunchyroll.com/auth/v1/token", {
@@ -143,27 +143,28 @@ async function getEpisodes(seasonsJson, bearer) {
           try {
             let json = await myFetch(`https://www.crunchyroll.com/content/v2/cms/seasons/${seasonId}/episodes?locale=${preferLocale}`, `https://www.crunchyroll.com/${preferLocale.toLocaleLowerCase()}/series/${animeId}`, bearer);
             json.data.forEach((episode) => {
-              if (episode.versions === null) {
-                if (!seasonsJson[animeTitle].seasons_data[seasonNumber].episodes) {
-                  seasonsJson[animeTitle].seasons_data[seasonNumber].episodes = {};
+              const targetSeason = seasonsJson[animeTitle].seasons_data[seasonNumber];
+              if (!targetSeason.episodes) {
+                targetSeason.episodes = {};
+              }
+              const episodesByLocale = targetSeason.episodes;
+              if (!episode.versions) {
+                const locale = episode.audio_locale;
+                if (!episodesByLocale[locale]) {
+                  episodesByLocale[locale] = [];
                 }
-                if (!seasonsJson[animeTitle].seasons_data[seasonNumber].episodes[episode.audio_locale]) {
-                  seasonsJson[animeTitle].seasons_data[seasonNumber].episodes[episode.audio_locale] = [];
-                }
-                seasonsJson[animeTitle].seasons_data[seasonNumber].episodes[episode.audio_locale].push({
+                episodesByLocale[locale].push({
                   episode_number: episode.episode_number,
                   guid: `https://www.crunchyroll.com/${preferLocale.toLocaleLowerCase()}/watch/${episode.id}`,
                   is_premium_only: episode.is_premium_only,
                 });
               } else {
                 episode.versions.forEach((version) => {
-                  if (!seasonsJson[animeTitle].seasons_data[seasonNumber].episodes) {
-                    seasonsJson[animeTitle].seasons_data[seasonNumber].episodes = {};
+                  const locale = version.audio_locale;
+                  if (!episodesByLocale[locale]) {
+                    episodesByLocale[locale] = [];
                   }
-                  if (!seasonsJson[animeTitle].seasons_data[seasonNumber].episodes[version.audio_locale]) {
-                    seasonsJson[animeTitle].seasons_data[seasonNumber].episodes[version.audio_locale] = [];
-                  }
-                  seasonsJson[animeTitle].seasons_data[seasonNumber].episodes[version.audio_locale].push({
+                  episodesByLocale[locale].push({
                     episode_number: episode.episode_number,
                     guid: `https://www.crunchyroll.com/watch/${version.guid}`,
                     title: episode.title,
@@ -207,6 +208,9 @@ async function createHTML(episodesJson) {
   
         body {
           font-family: Arial, sans-serif;
+          padding-left: 30px;
+          padding-right: 30px;
+          background: papayawhip;
         }
   
         h1 {
@@ -215,19 +219,20 @@ async function createHTML(episodesJson) {
         }
   
         .data {
-          max-width: 1000px;
+          max-width: 1920px;
           margin: auto;
+        }
+  
+        .anime {
+          margin-bottom: 20px;
           background-color: #f5f5f5;
           padding: 20px;
           border-radius: 10px;
           box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
   
-        .anime {
-          margin-bottom: 20px;
-        }
-  
         .content {
+          max-width: 1000px;
           display: flex;
           flex-wrap: nowrap;
           gap: 20px;
@@ -444,7 +449,6 @@ async function createHTML(episodesJson) {
         let divLanguageCode = document.createElement("div");
         divLanguageCode.setAttribute("class", "language-code");
         divLanguageCode.setAttribute("onclick", "copyLinks(event)");
-        divLanguageCode.textContent = `${languageCode}`;
         let divEpisodes = document.createElement("div");
         divEpisodes.setAttribute("class", "episodes");
 
@@ -470,6 +474,11 @@ async function createHTML(episodesJson) {
         });
 
         divLanguages.appendChild(divLanguage);
+
+        let totalEpisodes = anime.seasons_data[seasonNumber].episodes[languageCode].length;
+        let freeEpisodesCount = anime.seasons_data[seasonNumber].episodes[languageCode].filter((episode) => episode.is_premium_only === false).length;
+        let percentegeFreeEpisodes = ((freeEpisodesCount / totalEpisodes) * 100).toFixed(0);
+        divLanguageCode.textContent = `Audio ${languageCode} - ${totalEpisodes} episódios (${percentegeFreeEpisodes}% grátis)`;
       }
 
       divSeasons.appendChild(divSeason);
