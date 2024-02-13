@@ -6,7 +6,7 @@ Gera uma página .html com uma interface amigavel para localizar animes e seus l
 
 Para achar animes em sua linguagem preferida use o código de linguagem, exeplo: CTRL+F >> `Audio pt-BR`.
 
-Para achar temporadas 100% gratis procure por 100%
+Para achar temporadas 100% gratis procure por `100%`
 
 Caso não queira executar o script, o html em pt_BR atualizado em 12/02/2024 está disponível aqui:
 
