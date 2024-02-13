@@ -1,6 +1,6 @@
 let basicAuthToken = "Basic Y3Jfd2ViOg==";
-let animesRequestNumber = 1600;
-let startAnimeIndex = 0; //gintama = 441
+let animesRequestNumber = 20;
+let startAnimeIndex = 310; //gintama = 441// 319 dragon ball z
 let preferLocale = "pt-BR";
 let delayRequest = 30;
 
@@ -99,7 +99,7 @@ async function getSeasons(animesJson, bearer) {
           try {
             animeId = animesJson[animeTitle].id;
           } catch (error) {
-            console.error(`Erro ao obter animeID para ${animesJson.animeTitle}:`, error);
+            console.error(`Erro ao obter animeID para ${animeTitle}:`, error);
           }
 
           let json = await myFetch(`https://www.crunchyroll.com/content/v2/cms/series/${animeId}/seasons?force_locale=&locale=${preferLocale}`, `https://www.crunchyroll.com/${preferLocale.toLocaleLowerCase()}/series/${animeId}`, bearer);
@@ -117,10 +117,12 @@ async function getSeasons(animesJson, bearer) {
             resolve();
           }
         } catch (error) {
-          console.error(`Erro ao obter temporadas para o anime https://www.crunchyroll.com/content/v2/cms/series/${animeId}/seasons?force_locale=&locale=${preferLocale} - ${animeTitle}: `, error);
+          console.error(`Erro ao obter temporadas para o anime ${animeTitle}: `, error);
           reject(error);
         }
       }, delay);
+    }).catch((error) => {
+      console.error(`Erro na promessa para o anime ${animeTitle}:`, error);
     });
     promises.push(promise);
     delay += delayRequest;
@@ -478,7 +480,7 @@ async function createHTML(episodesJson) {
         let totalEpisodes = anime.seasons_data[seasonNumber].episodes[languageCode].length;
         let freeEpisodesCount = anime.seasons_data[seasonNumber].episodes[languageCode].filter((episode) => episode.is_premium_only === false).length;
         let percentegeFreeEpisodes = ((freeEpisodesCount / totalEpisodes) * 100).toFixed(0);
-        divLanguageCode.textContent = `Audio ${languageCode} - ${totalEpisodes} episódios (${percentegeFreeEpisodes}% grátis)`;
+        divLanguageCode.textContent = `${totalEpisodes} episódios - Audio ${languageCode} - ${percentegeFreeEpisodes}% grátis - `;
       }
 
       divSeasons.appendChild(divSeason);
@@ -519,6 +521,7 @@ async function start() {
   let seasonsJson = await getSeasons(animesJson, bearer);
   let episodesJson = await getEpisodes(seasonsJson, bearer);
   let htmlContent = await createHTML(episodesJson);
+  console.log("Animes coletados: ", Object.keys(animesJson).length);
   await createAndDownload(htmlContent, episodesJson);
 
   const endTime = new Date();
